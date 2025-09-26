@@ -193,14 +193,15 @@ async function convertPdfToText(file: File): Promise<string> {
 }
 
 async function convertImageToText(file: File): Promise<string> {
+  let worker;
   try {
-    const { data: { text } } = await Tesseract.recognize(file, 'eng', {
-      logger: () => {}, // Disable logging
-      workerOptions: {
-        workerPath: tesseractWorker,
-        corePath: tesseractCore
-      }
+    worker = await Tesseract.createWorker('eng', 1, {
+      workerPath: tesseractWorker,
+      corePath: tesseractCore,
+      logger: () => {} // Disable logging
     });
+    
+    const { data: { text } } = await worker.recognize(file);
     
     if (!text.trim()) {
       return await extractImageMetadata(file);
@@ -209,6 +210,10 @@ async function convertImageToText(file: File): Promise<string> {
     return `OCR Text Content:\n${text}\n\n${await extractImageMetadata(file)}`;
   } catch (error) {
     return await extractImageMetadata(file);
+  } finally {
+    if (worker) {
+      await worker.terminate();
+    }
   }
 }
 
