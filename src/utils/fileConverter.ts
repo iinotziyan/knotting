@@ -2,6 +2,8 @@ import * as mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import * as pdfjsLib from 'pdfjs-dist';
 import Tesseract from 'tesseract.js';
+import tesseractWorker from 'tesseract.js/dist/worker.min.js?url';
+import tesseractCore from 'tesseract.js-core/tesseract-core.wasm.js?url';
 
 // Enhanced file converter with better performance and error handling
 export async function convertFileToText(file: File): Promise<string> {
@@ -193,7 +195,11 @@ async function convertPdfToText(file: File): Promise<string> {
 async function convertImageToText(file: File): Promise<string> {
   try {
     const { data: { text } } = await Tesseract.recognize(file, 'eng', {
-      logger: () => {} // Disable logging
+      logger: () => {}, // Disable logging
+      workerOptions: {
+        workerPath: tesseractWorker,
+        corePath: tesseractCore
+      }
     });
     
     if (!text.trim()) {
